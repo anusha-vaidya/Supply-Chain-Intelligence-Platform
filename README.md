@@ -6,7 +6,7 @@ This project is a simple, end‑to‑end analytics platform that shows how data 
 - Supplier & Logistics Performance — supplier delays, reliability scoring, and shipment risks
 - Inventory & Production Planning — inventory levels, safety stock, and stockout risk
 
-Why this project matters:
+Problems it solves:
 It solves real problems supply chain teams face every day:
 - Steel price volatility
 - Supplier delays
@@ -21,7 +21,7 @@ How this project helps:
 - It predicts issues early (price spikes, supplier delays, inventory shortages) and sends simple AI alerts.
 - It mirrors their real business flow on how supply chains actually work.
 
-What I built technically:
+Technical Stack:
 
 - Python notebooks for data exploration, forecasting, and predictive modeling
 - SQL scripts for cleaning, joining, and preparing ERP‑style datasets
