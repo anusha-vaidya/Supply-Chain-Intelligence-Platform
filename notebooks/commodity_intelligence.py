@@ -17,4 +17,6 @@ plt.ylabel("Price")
 plt.tight_layout()
 plt.show()
 
+df.to_csv("data/commodity/commodity_analysis_output.csv", index=False)
+print("Exported: data/commodity/commodity_analysis_output.csv")
 
