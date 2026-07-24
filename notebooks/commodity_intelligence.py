@@ -65,8 +65,8 @@ forecast_df = pd.DataFrame({
 # 7. Append forecast rows to original data
 df = pd.concat([df, forecast_df], ignore_index=True)
 
-print("Last 10 rows:")
-print(df.tail(10))
+#print("Last 10 rows:")
+#print(df.tail(10))
 
 
 # 8. Export enriched dataset
