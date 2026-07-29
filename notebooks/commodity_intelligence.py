@@ -1,71 +1,92 @@
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-from statsmodels.tsa.seasonal import seasonal_decompose
 from statsmodels.tsa.arima.model import ARIMA
 
-
+# --------------------------------------------------
 # 1. Load data
+# --------------------------------------------------
 df = pd.read_csv("data/commodity/commodity_prices.csv", parse_dates=["date"])
 df = df.sort_values("date")
 
 print("Data Loaded:")
 print(df.head())
 
+# --------------------------------------------------
+# 2. Filter Actuals (2023–2024)
+# --------------------------------------------------
+actuals_df = df[(df["date"].dt.year >= 2023) & (df["date"].dt.year <= 2024)].copy()
 
-# 2. Daily % Change + Volatility Score
-df["pct_change"] = df["steel_price"].pct_change() * 100
-df["volatility_score"] = np.where(abs(df["pct_change"]) > 3, "High", "Normal")
+# --------------------------------------------------
+# 3. pct_change + volatility_score for actuals
+# --------------------------------------------------
+actuals_df["pct_change"] = actuals_df["steel_price"].pct_change() * 100
+actuals_df["pct_change"] = actuals_df["pct_change"].fillna(0)
 
+actuals_df["volatility_score"] = np.where(
+    actuals_df["pct_change"].abs() > 3, "High", "Normal"
+)
 
-# 3. Seasonal Decomposition (for visualization only)
-result = seasonal_decompose(df["steel_price"], model="additive", period=30)
-result.plot()
-plt.show()
+# --------------------------------------------------
+# 4. predicted_mean for actuals (rolling mean)
+# --------------------------------------------------
+actuals_df["predicted_mean"] = actuals_df["steel_price"].rolling(
+    window=7, min_periods=1
+).mean()
 
+# --------------------------------------------------
+# 5. Forecast ALL columns for 2025–June 2026
+# --------------------------------------------------
+def forecast_series(series, steps):
+    model = ARIMA(series, order=(5, 1, 2))
+    results = model.fit()
+    pred = results.forecast(steps=steps)
+    return pred
 
-# 4. Forecasting (ARIMA — stable for daily data)
-print("Running ARIMA forecast block...")
+# Forecast horizon: Jan 1 2025 → Jun 30 2026
+forecast_steps = (pd.Timestamp("2026-06-30") - pd.Timestamp("2025-01-01")).days + 1
+future_dates = pd.date_range(start="2025-01-01", periods=forecast_steps)
 
-train = df["steel_price"]
+steel_pred = forecast_series(actuals_df["steel_price"], forecast_steps)
+iron_pred = forecast_series(actuals_df["iron_ore_price"], forecast_steps)
+scrap_pred = forecast_series(actuals_df["scrap_price"], forecast_steps)
+freight_pred = forecast_series(actuals_df["freight_index"], forecast_steps)
+fx_pred = forecast_series(actuals_df["fx_rate"], forecast_steps)
 
-# ARIMA model (non-seasonal)
-model = ARIMA(train, order=(5, 1, 2))
-results = model.fit()
-
-forecast_steps = 90
-pred = results.forecast(steps=forecast_steps)
-
-# Simple confidence intervals
-lower_ci = pred - 20
-upper_ci = pred + 20
-
-
-# 5. Build future date range
-last_date = df["date"].max()
-future_dates = pd.date_range(start=last_date + pd.Timedelta(days=1), periods=forecast_steps)
-
-
-# 6. Build forecast dataframe with EXACT matching columns
+# --------------------------------------------------
+# 6. Build Forecast Table (NO blanks)
+# --------------------------------------------------
 forecast_df = pd.DataFrame({
     "date": future_dates,
-    "steel_price": [np.nan] * forecast_steps,
-    "iron_ore_price": [np.nan] * forecast_steps,
-    "scrap_price": [np.nan] * forecast_steps,
-    "freight_index": [np.nan] * forecast_steps,
-    "fx_rate": [np.nan] * forecast_steps,
-    "pct_change": [np.nan] * forecast_steps,
-    "volatility_score": ["Forecast"] * forecast_steps,
-    "predicted_mean": pred.values,
-    "lower_ci": lower_ci.values,
-    "upper_ci": upper_ci.values
+    "steel_price_predicted": steel_pred.values,
+    "iron_ore_predicted": iron_pred.values,
+    "scrap_price_predicted": scrap_pred.values,
+    "freight_index_predicted": freight_pred.values,
+    "fx_rate_predicted": fx_pred.values,
 })
 
+# pct_change_predicted
+forecast_df["pct_change_predicted"] = (
+    forecast_df["steel_price_predicted"].pct_change().fillna(0) * 100
+)
 
-# 7. Append forecast rows to original data
-df = pd.concat([df, forecast_df], ignore_index=True)
+# predicted_mean (rolling mean)
+forecast_df["predicted_mean"] = forecast_df["steel_price_predicted"].rolling(
+    window=7, min_periods=1
+).mean()
 
+# volatility_score
+forecast_df["volatility_score"] = np.where(
+    forecast_df["pct_change_predicted"].abs() > 3, "High", "Normal"
+)
 
-# 8. Export enriched dataset
-df.to_csv("data/commodity/commodity_analysis_output.csv", index=False)
-print("Exported: data/commodity/commodity_analysis_output.csv")
+# confidence intervals
+forecast_df["lower_ci"] = forecast_df["steel_price_predicted"] - 20
+forecast_df["upper_ci"] = forecast_df["steel_price_predicted"] + 20
+
+# --------------------------------------------------
+# 7. Export BOTH clean tables
+# --------------------------------------------------
+actuals_df.to_csv("data/commodity/commodity_actuals.csv", index=False)
+forecast_df.to_csv("data/commodity/commodity_forecast.csv", index=False)
+
+print("Exported: commodity_actuals.csv and commodity_forecast.csv")
