@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from statsmodels.tsa.arima.model import ARIMA
+from statsmodels.tsa.statespace.sarimax import SARIMAX
 
 # --------------------------------------------------
 # 1. Load data
@@ -37,8 +37,8 @@ actuals_df["predicted_mean"] = actuals_df["steel_price"].rolling(
 # 5. Forecast ALL columns for 2025–June 2026
 # --------------------------------------------------
 def forecast_series(series, steps):
-    model = ARIMA(series, order=(1, 0, 1))
-    results = model.fit()
+    model = SARIMAX(series, order=(1,0,1), seasonal_order=(1,0,1,30))
+    results = model.fit(disp=False)
     pred = results.forecast(steps=steps)
     return pred
 
