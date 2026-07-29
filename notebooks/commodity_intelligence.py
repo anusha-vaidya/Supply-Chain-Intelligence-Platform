@@ -12,6 +12,24 @@ print("Data Loaded:")
 print(df.head())
 
 # --------------------------------------------------
+# 1A. Add new common keys (supplier_name, material_id, material_name)
+# --------------------------------------------------
+# These columns already exist in your updated commodity_prices.csv,
+# but this ensures they are present even if older files are loaded.
+
+if "supplier_name" not in df.columns:
+    suppliers = ["AlphaSteel", "BetaMetals", "CoreSteel", "DeltaIron", "PrimeSteel"]
+    df["supplier_name"] = np.random.choice(suppliers, len(df))
+
+if "material_id" not in df.columns:
+    material_ids = [f"MAT{100+i}" for i in range(300)]
+    df["material_id"] = np.random.choice(material_ids, len(df))
+
+if "material_name" not in df.columns:
+    materials = ["Steel Coil", "Steel Rod", "Steel Plate", "Steel Bar", "Steel Sheet"]
+    df["material_name"] = np.random.choice(materials, len(df))
+
+# --------------------------------------------------
 # 2. Filter Actuals (2023–2024)
 # --------------------------------------------------
 actuals_df = df[(df["date"].dt.year >= 2023) & (df["date"].dt.year <= 2024)].copy()
@@ -82,6 +100,19 @@ forecast_df["volatility_score"] = np.where(
 # confidence intervals
 forecast_df["lower_ci"] = forecast_df["steel_price_predicted"] - 20
 forecast_df["upper_ci"] = forecast_df["steel_price_predicted"] + 20
+
+# --------------------------------------------------
+# 6A. Add new common keys to forecast_df
+# --------------------------------------------------
+# These ensure forecast table connects to supplier/logistics/inventory/production
+
+suppliers = ["AlphaSteel", "BetaMetals", "CoreSteel", "DeltaIron", "PrimeSteel"]
+materials = ["Steel Coil", "Steel Rod", "Steel Plate", "Steel Bar", "Steel Sheet"]
+material_ids = [f"MAT{100+i}" for i in range(300)]
+
+forecast_df["supplier_name"] = np.random.choice(suppliers, len(forecast_df))
+forecast_df["material_id"] = np.random.choice(material_ids, len(forecast_df))
+forecast_df["material_name"] = np.random.choice(materials, len(forecast_df))
 
 # --------------------------------------------------
 # 7. Export BOTH clean tables

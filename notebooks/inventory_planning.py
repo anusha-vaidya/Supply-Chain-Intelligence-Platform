@@ -12,6 +12,25 @@ print(inventory_df.head())
 print("\nBOM Consumption Data Loaded:")
 print(bom_df.head())
 
+# --------------------------------------------------
+# Add new common keys if missing (supplier_name, material_id, material_name)
+# --------------------------------------------------
+
+# supplier_name (must exist for cross-filtering)
+if "supplier_name" not in inventory_df.columns:
+    suppliers = ["AlphaSteel", "BetaMetals", "CoreSteel", "DeltaIron", "PrimeSteel"]
+    inventory_df["supplier_name"] = np.random.choice(suppliers, len(inventory_df))
+
+if "supplier_name" not in bom_df.columns:
+    suppliers = ["AlphaSteel", "BetaMetals", "CoreSteel", "DeltaIron", "PrimeSteel"]
+    bom_df["supplier_name"] = np.random.choice(suppliers, len(bom_df))
+
+# material_id already exists in both tables
+# material_name already exists in inventory_df
+# If missing in BOM, add it
+if "material_name" not in bom_df.columns:
+    materials = ["Steel Coil", "Steel Rod", "Steel Plate", "Steel Bar", "Steel Sheet"]
+    bom_df["material_name"] = np.random.choice(materials, len(bom_df))
 
 # 1. Basic Stockout Risk (Current Stock vs Safety Stock)
 inventory_df["stockout_risk_flag"] = inventory_df["current_stock"] < inventory_df["safety_stock"]

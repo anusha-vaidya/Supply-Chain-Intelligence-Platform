@@ -8,6 +8,20 @@ df = df.sort_values("po_date")
 print("Supplier PO Data Loaded:")
 print(df.head())
 
+# --------------------------------------------------
+# Add new common keys if missing (material_id, material_name)
+# --------------------------------------------------
+
+# material_id
+if "material_id" not in df.columns:
+    material_ids = [f"MAT{100+i}" for i in range(300)]
+    df["material_id"] = np.random.choice(material_ids, len(df))
+
+# material_name
+if "material_name" not in df.columns:
+    materials = ["Steel Coil", "Steel Rod", "Steel Plate", "Steel Bar", "Steel Sheet"]
+    df["material_name"] = np.random.choice(materials, len(df))
+
 
 # 1. Delay Days Calculation
 df["delay_days"] = (df["actual_delivery_date"] - df["promised_date"]).dt.days
