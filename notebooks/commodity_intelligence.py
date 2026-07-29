@@ -37,7 +37,7 @@ actuals_df["predicted_mean"] = actuals_df["steel_price"].rolling(
 # 5. Forecast ALL columns for 2025–June 2026
 # --------------------------------------------------
 def forecast_series(series, steps):
-    model = ARIMA(series, order=(1, 1, 1))
+    model = ARIMA(series, order=(1, 0, 1))
     results = model.fit()
     pred = results.forecast(steps=steps)
     return pred
