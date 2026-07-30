@@ -3,31 +3,44 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Load logistics data
-df = pd.read_csv("data/logistics/logistics_shipments.csv",
-                 parse_dates=["departure_date", "eta_date", "actual_arrival_date"])
+df = pd.read_csv(
+    "data/logistics/logistics_shipments.csv",
+    parse_dates=["departure_date", "eta_date", "actual_arrival_date"]
+)
 df = df.sort_values("departure_date")
 
 print("Logistics Shipment Data Loaded:")
 print(df.head())
 
 # --------------------------------------------------
-# Add new common keys if missing (supplier_name, material_id, material_name)
+# Add new common keys if missing (supplier_id, supplier_name, material_id, material_name)
 # --------------------------------------------------
 
-# supplier_name (must exist for cross-filtering)
-if "supplier_name" not in df.columns:
-    suppliers = ["AlphaSteel", "BetaMetals", "CoreSteel", "DeltaIron", "PrimeSteel"]
-    df["supplier_name"] = np.random.choice(suppliers, len(df))
+# supplier_id + supplier_name
+if "supplier_id" not in df.columns:
+    supplier_map = {
+        "SUP001": "AlphaSteel",
+        "SUP002": "BetaMetals",
+        "SUP003": "CoreSteel",
+        "SUP004": "DeltaIron",
+        "SUP005": "PrimeSteel"
+    }
+    supplier_ids = list(supplier_map.keys())
+    df["supplier_id"] = np.random.choice(supplier_ids, len(df))
+    df["supplier_name"] = df["supplier_id"].map(supplier_map)
 
-# material_id
+# material_id + material_name
 if "material_id" not in df.columns:
-    material_ids = [f"MAT{100+i}" for i in range(300)]
+    material_map = {
+        "MAT100": "Steel Coil",
+        "MAT101": "Steel Rod",
+        "MAT102": "Steel Plate",
+        "MAT103": "Steel Bar",
+        "MAT104": "Steel Sheet"
+    }
+    material_ids = list(material_map.keys())
     df["material_id"] = np.random.choice(material_ids, len(df))
-
-# material_name
-if "material_name" not in df.columns:
-    materials = ["Steel Coil", "Steel Rod", "Steel Plate", "Steel Bar", "Steel Sheet"]
-    df["material_name"] = np.random.choice(materials, len(df))
+    df["material_name"] = df["material_id"].map(material_map)
 
 # --------------------------------------------------
 # 1. ETA Delay Calculation

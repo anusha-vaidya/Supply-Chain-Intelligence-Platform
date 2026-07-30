@@ -12,22 +12,34 @@ print("Data Loaded:")
 print(df.head())
 
 # --------------------------------------------------
-# 1A. Add new common keys (supplier_name, material_id, material_name)
+# 1A. Add new common keys (supplier_id, supplier_name, material_id, material_name)
 # --------------------------------------------------
-# These columns already exist in your updated commodity_prices.csv,
-# but this ensures they are present even if older files are loaded.
 
-if "supplier_name" not in df.columns:
-    suppliers = ["AlphaSteel", "BetaMetals", "CoreSteel", "DeltaIron", "PrimeSteel"]
-    df["supplier_name"] = np.random.choice(suppliers, len(df))
+# supplier_id + supplier_name
+if "supplier_id" not in df.columns:
+    supplier_map = {
+        "SUP001": "AlphaSteel",
+        "SUP002": "BetaMetals",
+        "SUP003": "CoreSteel",
+        "SUP004": "DeltaIron",
+        "SUP005": "PrimeSteel"
+    }
+    supplier_ids = list(supplier_map.keys())
+    df["supplier_id"] = np.random.choice(supplier_ids, len(df))
+    df["supplier_name"] = df["supplier_id"].map(supplier_map)
 
+# material_id + material_name
 if "material_id" not in df.columns:
-    material_ids = [f"MAT{100+i}" for i in range(300)]
+    material_map = {
+        "MAT100": "Steel Coil",
+        "MAT101": "Steel Rod",
+        "MAT102": "Steel Plate",
+        "MAT103": "Steel Bar",
+        "MAT104": "Steel Sheet"
+    }
+    material_ids = list(material_map.keys())
     df["material_id"] = np.random.choice(material_ids, len(df))
-
-if "material_name" not in df.columns:
-    materials = ["Steel Coil", "Steel Rod", "Steel Plate", "Steel Bar", "Steel Sheet"]
-    df["material_name"] = np.random.choice(materials, len(df))
+    df["material_name"] = df["material_id"].map(material_map)
 
 # --------------------------------------------------
 # 2. Filter Actuals (2023–2024)
@@ -60,7 +72,6 @@ def forecast_series(series, steps):
     pred = results.forecast(steps=steps)
     return pred
 
-# Forecast horizon: Jan 1 2025 → Jun 30 2026
 forecast_steps = (pd.Timestamp("2026-06-30") - pd.Timestamp("2025-01-01")).days + 1
 future_dates = pd.date_range(start="2025-01-01", periods=forecast_steps)
 
@@ -82,37 +93,48 @@ forecast_df = pd.DataFrame({
     "fx_rate_predicted": fx_pred.values,
 })
 
-# pct_change_predicted
 forecast_df["pct_change_predicted"] = (
     forecast_df["steel_price_predicted"].pct_change().fillna(0) * 100
 )
 
-# predicted_mean (rolling mean)
 forecast_df["predicted_mean"] = forecast_df["steel_price_predicted"].rolling(
     window=7, min_periods=1
 ).mean()
 
-# volatility_score
 forecast_df["volatility_score"] = np.where(
     forecast_df["pct_change_predicted"].abs() > 3, "High", "Normal"
 )
 
-# confidence intervals
 forecast_df["lower_ci"] = forecast_df["steel_price_predicted"] - 20
 forecast_df["upper_ci"] = forecast_df["steel_price_predicted"] + 20
 
 # --------------------------------------------------
 # 6A. Add new common keys to forecast_df
 # --------------------------------------------------
-# These ensure forecast table connects to supplier/logistics/inventory/production
 
-suppliers = ["AlphaSteel", "BetaMetals", "CoreSteel", "DeltaIron", "PrimeSteel"]
-materials = ["Steel Coil", "Steel Rod", "Steel Plate", "Steel Bar", "Steel Sheet"]
-material_ids = [f"MAT{100+i}" for i in range(300)]
+supplier_map = {
+    "SUP001": "AlphaSteel",
+    "SUP002": "BetaMetals",
+    "SUP003": "CoreSteel",
+    "SUP004": "DeltaIron",
+    "SUP005": "PrimeSteel"
+}
+supplier_ids = list(supplier_map.keys())
 
-forecast_df["supplier_name"] = np.random.choice(suppliers, len(forecast_df))
+material_map = {
+    "MAT100": "Steel Coil",
+    "MAT101": "Steel Rod",
+    "MAT102": "Steel Plate",
+    "MAT103": "Steel Bar",
+    "MAT104": "Steel Sheet"
+}
+material_ids = list(material_map.keys())
+
+forecast_df["supplier_id"] = np.random.choice(supplier_ids, len(forecast_df))
+forecast_df["supplier_name"] = forecast_df["supplier_id"].map(supplier_map)
+
 forecast_df["material_id"] = np.random.choice(material_ids, len(forecast_df))
-forecast_df["material_name"] = np.random.choice(materials, len(forecast_df))
+forecast_df["material_name"] = forecast_df["material_id"].map(material_map)
 
 # --------------------------------------------------
 # 7. Export BOTH clean tables
