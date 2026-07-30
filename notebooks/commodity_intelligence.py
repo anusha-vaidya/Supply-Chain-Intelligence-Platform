@@ -116,7 +116,31 @@ forecast_df = pd.DataFrame({
 forecast_df["pct_change_predicted"] = (
     forecast_df["steel_price_predicted"].pct_change().fillna(0) * 100
 )
+# --------------------------------------------------
+# Add volatility (Option 2)
+# 85% normal (0–1%), 10% elevated (1–3%), 5% high (3–6%)
+# --------------------------------------------------
+np.random.seed(42)
 
+volatility_levels = np.random.choice(
+    [0, 1, 2],                # 0 = normal, 1 = elevated, 2 = high
+    size=len(forecast_df),
+    p=[0.85, 0.10, 0.05]      # probabilities
+)
+
+volatility_noise = []
+for level in volatility_levels:
+    if level == 0:
+        noise = np.random.uniform(0, 1)      # normal
+    elif level == 1:
+        noise = np.random.uniform(1, 3)      # elevated
+    else:
+        noise = np.random.uniform(3, 6)      # high
+    volatility_noise.append(noise)
+
+forecast_df["pct_change_predicted_vol"] = (
+    forecast_df["pct_change_predicted"] + volatility_noise
+)
 forecast_df["predicted_mean"] = forecast_df["steel_price_predicted"].rolling(
     window=7, min_periods=1
 ).mean()
